@@ -2289,8 +2289,11 @@ footer{
       <span class="eyebrow">Risorsa gratuita</span>
       <h2>Scarica la guida alla postura sana.</h2>
       <p>14 pagine con esercizi pratici, illustrazioni e checklist quotidiana per ridurre dolori cervicali e lombari da postura scorretta. Pensata per chi lavora seduto.</p>
-      <form class="lead-form" onsubmit="return false;">
-        <input type="email" placeholder="La tua email" required="">
+      <div class="form-success" id="leadSuccess" style="display:none; padding:0.8rem 1.2rem; background:#e6f4ea; color:#1a5c2a; border-radius:6px; margin-bottom:0.8rem; font-size:0.9rem;">
+        ✓ Perfetto! Controlla la tua email.
+      </div>
+      <form id="leadForm" class="lead-form" action="https://formspree.io/f/xwvyorzn" method="POST">
+        <input type="email" name="email" placeholder="La tua email" required="">
         <button type="submit">Scarica gratis</button>
       </form>
       <small style="display:block; margin-top:0.8rem; color:var(--muted); font-size:0.8rem">Niente spam. Solo contenuti utili, quando ne abbiamo.</small>
@@ -2313,30 +2316,33 @@ footer{
           <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg> Disdetta gratuita fino a 24h prima</li>
         </ul>
       </div>
-      <form class="booking-form fade-in" onsubmit="return false;">
+      <div class="form-success" id="bookingSuccess" style="display:none; padding:1rem 1.4rem; background:#e6f4ea; color:#1a5c2a; border-radius:6px; margin-bottom:1rem; font-size:0.95rem;">
+        ✓ Richiesta inviata! Ti ricontattiamo entro 24 ore.
+      </div>
+      <form id="bookingForm" class="booking-form fade-in" action="https://formspree.io/f/xwvyorzn" method="POST">
         <div class="form-row">
           <div class="form-group">
             <label>Nome</label>
-            <input type="text" placeholder="Il tuo nome" required="">
+            <input type="text" name="nome" placeholder="Il tuo nome" required="">
           </div>
           <div class="form-group">
             <label>Cognome</label>
-            <input type="text" placeholder="Il tuo cognome" required="">
+            <input type="text" name="cognome" placeholder="Il tuo cognome" required="">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Email</label>
-            <input type="email" placeholder="email@esempio.it" required="">
+            <input type="email" name="email" placeholder="email@esempio.it" required="">
           </div>
           <div class="form-group">
             <label>Telefono</label>
-            <input type="tel" placeholder="+39 ..." required="">
+            <input type="tel" name="telefono" placeholder="+39 ..." required="">
           </div>
         </div>
         <div class="form-group">
           <label>Tipo di trattamento</label>
-          <select required="">
+          <select name="trattamento" required="">
             <option value="">Seleziona...</option>
             <option>Fisioterapia generale</option>
             <option>Terapia manuale</option>
@@ -2349,7 +2355,7 @@ footer{
         </div>
         <div class="form-group">
           <label>Descrivi brevemente la tua situazione</label>
-          <textarea placeholder="Cosa ti porta da noi? Da quanto tempo? Hai già consultato altri specialisti?"></textarea>
+          <textarea name="messaggio" placeholder="Cosa ti porta da noi? Da quanto tempo? Hai già consultato altri specialisti?"></textarea>
         </div>
         <div class="form-checkbox">
           <input type="checkbox" id="privacy" required="">
@@ -2600,23 +2606,72 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
     }
   }, { passive: true });
   
-  // Form submit handlers (placeholder - sostituire con backend reale)
-  document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function(e){
+  // Lead magnet form → Formspree
+  const leadForm = document.getElementById('leadForm');
+  const leadSuccess = document.getElementById('leadSuccess');
+  if (leadForm) {
+    leadForm.addEventListener('submit', async function(e) {
       e.preventDefault();
-      const btn = form.querySelector('button[type="submit"], .btn-submit');
-      if (btn) {
-        const original = btn.textContent;
-        btn.textContent = '✓ Richiesta inviata';
-        btn.style.background = '#25D366';
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.style.background = '';
-          form.reset();
-        }, 3000);
+      const btn = leadForm.querySelector('button[type="submit"]');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Invio in corso...';
+      btn.style.opacity = '0.7';
+      try {
+        const res = await fetch(leadForm.action, {
+          method: 'POST',
+          body: new FormData(leadForm),
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          leadSuccess.style.display = 'block';
+          leadForm.reset();
+          setTimeout(() => { leadSuccess.style.display = 'none'; }, 8000);
+        } else {
+          alert('Errore nell\'invio. Riprova o chiamaci direttamente.');
+        }
+      } catch(err) {
+        alert('Errore di connessione. Riprova o chiamaci direttamente.');
       }
+      btn.textContent = originalText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
     });
-  });
+  }
+
+  // Booking form → Formspree
+  const bookingForm = document.getElementById('bookingForm');
+  const bookingSuccess = document.getElementById('bookingSuccess');
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = bookingForm.querySelector('.btn-submit');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = 'Invio in corso...';
+      btn.style.opacity = '0.7';
+      try {
+        const res = await fetch(bookingForm.action, {
+          method: 'POST',
+          body: new FormData(bookingForm),
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          bookingSuccess.style.display = 'block';
+          bookingForm.reset();
+          bookingSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => { bookingSuccess.style.display = 'none'; }, 8000);
+        } else {
+          alert('Errore nell\'invio. Riprova o chiamaci direttamente.');
+        }
+      } catch(err) {
+        alert('Errore di connessione. Riprova o chiamaci direttamente.');
+      }
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
+  }
   
   // Close menu on link click
   document.querySelectorAll('.nav-links a').forEach(link => {
